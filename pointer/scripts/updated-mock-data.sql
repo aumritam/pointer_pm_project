@@ -1,0 +1,22 @@
+-- Updated mock data with proper themes instead of "general"
+INSERT INTO feedback (source, text, sentiment, theme) VALUES 
+('support', 'The system is just not working properly for me today, very frustrating experience overall', 'negative', 'system errors'),
+('support', 'Having issues with the platform again, this is getting really annoying', 'negative', 'system errors'),
+('github', 'Memory leak issue still not fixed, this has been reported multiple times', 'negative', 'memory'),
+('github', 'API rate limiting is too aggressive, blocking legitimate usage again', 'negative', 'api'),
+('twitter', 'Love the new features! Really making my workflow much better', 'positive', 'feature request'),
+('twitter', 'The UI redesign looks amazing, great job team!', 'positive', 'user interface'),
+('community', 'Enterprise deployment failing due to authentication issues with SSO provider', 'negative', 'enterprise'),
+('community', 'Critical: Data corruption detected in bulk import operations for large datasets', 'negative', 'data integrity'),
+('community', 'High severity: Security vulnerability in API key management system', 'negative', 'security'),
+('community', 'Performance degradation in multi-tenant environment affecting all clients', 'negative', 'performance'),
+('support', 'Something is broken but I cannot figure out what exactly, please help', 'negative', 'system errors'),
+('support', 'The performance has been terrible lately, making it hard to get work done', 'negative', 'performance'),
+('github', 'Documentation still outdated, examples do not match current API', 'negative', 'documentation'),
+('github', 'Type definitions are incorrect, causing runtime errors in production', 'negative', 'system errors'),
+('twitter', 'Having some trouble with the latest update, rolling back for now', 'negative', 'updates'),
+('twitter', 'Customer support was super helpful today, thank you!', 'positive', 'customer support'),
+('twitter', 'Waiting for the bug fix mentioned in the roadmap', 'neutral', 'feature request'),
+('support', 'Keep running into errors when trying to save my work', 'negative', 'system errors'),
+('github', 'Build process keeps failing intermittently, please investigate', 'negative', 'build deployment'),
+('community', 'Integration with Salesforce connector broken after latest security patch', 'negative', 'integration');

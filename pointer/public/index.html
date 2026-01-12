@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback Escalation Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen p-6">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Feedback Escalation Dashboard</h1>
+            <p class="text-gray-600 mt-2">Monitor and analyze customer feedback across all channels</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Submit Feedback Section -->
+            <section class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">Submit Feedback</h2>
+                <form id="feedbackForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Source</label>
+                        <select id="source" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="support">Support Ticket</option>
+                            <option value="github">GitHub Issue</option>
+                            <option value="twitter">Twitter Mention</option>
+                            <option value="community">Community Forum</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Feedback Text</label>
+                        <textarea id="text" rows="3" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                  placeholder="Enter feedback text..."></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                        Submit Feedback
+                    </button>
+                </form>
+                <div id="submitResult" class="mt-4 hidden"></div>
+            </section>
+
+            <!-- Quick Actions -->
+            <section class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">Quick Actions</h2>
+                <div class="space-y-3">
+                    <button id="loadSeedData" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors">
+                        Load Mock Data (20 entries)
+                    </button>
+                    <button id="refreshEscalations" class="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition-colors">
+                        Refresh Escalations
+                    </button>
+                    <button id="clearData" class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors">
+                        Clear All Data
+                    </button>
+                </div>
+                <div id="actionResult" class="mt-4 hidden"></div>
+            </section>
+        </div>
+
+        <!-- Escalations Section -->
+        <section class="bg-white rounded-lg shadow p-6 mt-6">
+            <h2 class="text-xl font-semibold mb-4">Today's Top Escalations</h2>
+            <div id="escalations" class="space-y-4">
+                <p class="text-gray-500">Loading escalations...</p>
+            </div>
+        </section>
+
+        <!-- Recent Feedback -->
+        <section class="bg-white rounded-lg shadow p-6 mt-6">
+            <h2 class="text-xl font-semibold mb-4">Recent Feedback</h2>
+            <div id="recentFeedback" class="space-y-3">
+                <p class="text-gray-500">Loading recent feedback...</p>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        
+        // Submit feedback form
+        document.getElementById('feedbackForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const source = document.getElementById('source').value;
+            const text = document.getElementById('text').value;
+            
+            if (!text.trim()) {
+                showResult('submitResult', 'Please enter feedback text', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/feedback`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ source, text })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResult('submitResult', `✅ Feedback submitted! Score: ${result.score}`, 'success');
+                    document.getElementById('text').value = '';
+                    refreshEscalations();
+                    loadRecentFeedback();
+                } else {
+                    showResult('submitResult', `❌ Error: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showResult('submitResult', `❌ Network error: ${error.message}`, 'error');
+            }
+        });
+        
+        // Load seed data
+        document.getElementById('loadSeedData').addEventListener('click', async () => {
+            try {
+                showResult('actionResult', 'Loading mock data...', 'info');
+                
+                const mockData = [
+                    { source: 'support', text: 'The system is just not working properly for me today, very frustrating experience overall' },
+                    { source: 'support', text: 'Having issues with the platform again, this is getting really annoying' },
+                    { source: 'github', text: 'Memory leak issue still not fixed, this has been reported multiple times' },
+                    { source: 'github', text: 'API rate limiting is too aggressive, blocking legitimate usage again' },
+                    { source: 'twitter', text: 'Love the new features! Really making my workflow much better' },
+                    { source: 'twitter', text: 'The UI redesign looks amazing, great job team!' },
+                    { source: 'community', text: 'Enterprise deployment failing due to authentication issues with SSO provider' },
+                    { source: 'community', text: 'Critical: Data corruption detected in bulk import operations for large datasets' },
+                    { source: 'community', text: 'High severity: Security vulnerability in API key management system' },
+                    { source: 'community', text: 'Performance degradation in multi-tenant environment affecting all clients' },
+                    { source: 'support', text: 'Something is broken but I cannot figure out what exactly, please help' },
+                    { source: 'support', text: 'The performance has been terrible lately, making it hard to get work done' },
+                    { source: 'github', text: 'Documentation still outdated, examples do not match current API' },
+                    { source: 'github', text: 'Type definitions are incorrect, causing runtime errors in production' },
+                    { source: 'twitter', text: 'Having some trouble with the latest update, rolling back for now' },
+                    { source: 'twitter', text: 'Customer support was super helpful today, thank you!' },
+                    { source: 'twitter', text: 'Waiting for the bug fix mentioned in the roadmap' },
+                    { source: 'support', text: 'Keep running into errors when trying to save my work' },
+                    { source: 'github', text: 'Build process keeps failing intermittently, please investigate' },
+                    { source: 'community', text: 'Integration with Salesforce connector broken after latest security patch' }
+                ];
+                
+                let successCount = 0;
+                for (const feedback of mockData) {
+                    try {
+                        const response = await fetch(`${API_BASE}/feedback`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(feedback)
+                        });
+                        if (response.ok) successCount++;
+                    } catch (error) {
+                        console.error('Failed to submit feedback:', feedback, error);
+                    }
+                }
+                
+                showResult('actionResult', `✅ Loaded ${successCount}/20 mock feedback entries`, 'success');
+                refreshEscalations();
+                loadRecentFeedback();
+            } catch (error) {
+                showResult('actionResult', `❌ Error loading data: ${error.message}`, 'error');
+            }
+        });
+        
+        // Refresh escalations
+        document.getElementById('refreshEscalations').addEventListener('click', refreshEscalations);
+        
+        // Clear data
+        document.getElementById('clearData').addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to clear all feedback data?')) return;
+            
+            try {
+                // This would need a DELETE endpoint - for now just refresh
+                showResult('actionResult', '⚠️ Clear functionality needs backend DELETE endpoint', 'warning');
+            } catch (error) {
+                showResult('actionResult', `❌ Error: ${error.message}`, 'error');
+            }
+        });
+        
+        // Load escalations
+        async function refreshEscalations() {
+            try {
+                const response = await fetch(`${API_BASE}/escalations`);
+                const data = await response.json();
+                
+                const container = document.getElementById('escalations');
+                
+                if (!response.ok) {
+                    container.innerHTML = `<p class="text-red-500">Error loading escalations: ${data.error}</p>`;
+                    return;
+                }
+                
+                if (data.escalations.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500">No escalations for today. Submit some feedback to see results!</p>';
+                    return;
+                }
+                
+                container.innerHTML = data.escalations.map((escalation, index) => `
+                    <div class="border-l-4 border-blue-500 pl-4 py-2">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-semibold text-lg">${escalation.theme}</h3>
+                                <p class="text-sm text-gray-600">Score: ${escalation.score} | ${escalation.feedbackCount} feedback items</p>
+                                <div class="flex gap-4 mt-2 text-sm">
+                                    <span>Sentiment: ${escalation.sentimentBreakdown.negative}🔴 ${escalation.sentimentBreakdown.neutral}🟡 ${escalation.sentimentBreakdown.positive}🟢</span>
+                                    <span>Sources: ${Object.entries(escalation.sourceBreakdown).map(([src, count]) => `${src}(${count})`).join(', ')}</span>
+                                </div>
+                            </div>
+                            <div class="text-2xl font-bold text-blue-600">#${index + 1}</div>
+                        </div>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-700">Sample feedback:</p>
+                            <ul class="text-sm text-gray-600 mt-1 space-y-1">
+                                ${escalation.sampleFeedback.map(f => `<li>• "${f.text}" (${f.source})</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                document.getElementById('escalations').innerHTML = `<p class="text-red-500">Network error: ${error.message}</p>`;
+            }
+        }
+        
+        // Load recent feedback (simplified - would need additional endpoint)
+        async function loadRecentFeedback() {
+            try {
+                const response = await fetch(`${API_BASE}/escalations`);
+                const data = await response.json();
+                
+                const container = document.getElementById('recentFeedback');
+                
+                if (!response.ok || data.escalations.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500">No recent feedback available</p>';
+                    return;
+                }
+                
+                // Show sample feedback from top escalations
+                const allSamples = data.escalations.flatMap(e => e.sampleFeedback);
+                container.innerHTML = allSamples.slice(0, 5).map(f => `
+                    <div class="border-l-2 border-gray-300 pl-3 py-1">
+                        <span class="inline-block px-2 py-1 text-xs rounded ${getSourceColor(f.source)}">${f.source}</span>
+                        <span class="inline-block px-2 py-1 text-xs rounded ${getSentimentColor(f.sentiment)} ml-1">${f.sentiment}</span>
+                        <p class="text-sm mt-1">"${f.text}"</p>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                document.getElementById('recentFeedback').innerHTML = `<p class="text-red-500">Error loading feedback: ${error.message}</p>`;
+            }
+        }
+        
+        function getSourceColor(source) {
+            const colors = {
+                support: 'bg-blue-100 text-blue-800',
+                github: 'bg-gray-100 text-gray-800', 
+                twitter: 'bg-sky-100 text-sky-800',
+                community: 'bg-purple-100 text-purple-800'
+            };
+            return colors[source] || 'bg-gray-100 text-gray-800';
+        }
+        
+        function getSentimentColor(sentiment) {
+            const colors = {
+                positive: 'bg-green-100 text-green-800',
+                neutral: 'bg-yellow-100 text-yellow-800',
+                negative: 'bg-red-100 text-red-800'
+            };
+            return colors[sentiment] || 'bg-gray-100 text-gray-800';
+        }
+        
+        function showResult(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.className = 'mt-4 p-3 rounded-md text-sm';
+            
+            const colors = {
+                success: 'bg-green-100 text-green-800',
+                error: 'bg-red-100 text-red-800',
+                info: 'bg-blue-100 text-blue-800',
+                warning: 'bg-yellow-100 text-yellow-800'
+            };
+            
+            element.className += ' ' + colors[type];
+            element.textContent = message;
+            element.classList.remove('hidden');
+            
+            setTimeout(() => element.classList.add('hidden'), 5000);
+        }
+        
+        // Initial load
+        refreshEscalations();
+        loadRecentFeedback();
+    </script>
+</body>
+</html>

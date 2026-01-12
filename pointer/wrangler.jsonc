@@ -9,6 +9,21 @@
 	"compatibility_date": "2025-09-27",
 	"observability": {
 		"enabled": true
+	},
+	"d1_databases": [
+		{
+			"binding": "pointer_db",
+			"database_name": "pointer-db",
+			"database_id": "724e41fe-1f07-499c-b7d5-44b56e30019a",
+			"remote": true
+		}
+	],
+	"ai": {
+		"binding": "ai"
+	},
+	"assets": {
+		"directory": "./public",
+		"binding": "ASSETS"
 	}
 	/**
 	 * Smart Placement
